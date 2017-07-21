@@ -1,0 +1,31 @@
+Option Explicit
+
+Dim Con As ADODB.ConnectionDim RS As ADODB.Recordset
+Dim strFilePath, strFileName As String
+
+Dim Arr(), TempArray() As Variant
+Dim CT1, CT2 As Integer
+
+Sub PriceTool()
+Const adOpenStatic = 3
+Const adLockOptimistic = 3
+Set Con = CreateObject("ADODB.Connection")
+Set RS = CreateObject("ADODB.Recordset")
+'nazwa pliku
+strFileName = "C:\Users\a0706517\Desktop\Book1.xlsm"
+'typ polaczenia, sprawdzic - Microsoft.ACE.OLEDB
+    Con.ConnectionString = "Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" & strFileName & ";Extended Properties=""Excel 8.0;HDR=Yes;IMEX=1"";"
+    Con.Open Con.ConnectionString
+    'range - wprowadzic zmienna
+    RS.Open "Select * from [Sheet1$A2:E11]", Con, adOpenStatic, adLockOptimistic
+Arr = RS.GetRows(RS.RecordCount)
+    ReDim TempArray(UBound(Arr, 2), UBound(Arr, 1))
+        For CT1 = 0 To UBound(Arr, 2)
+            For CT2 = 0 To UBound(Arr, 1)
+            TempArray(CT1, CT2) = Arr(CT2, CT1)
+        Next CT2
+    Next CT1Arr = TempArray
+'XML creator
+RS.Close
+Con.Close
+End Sub
