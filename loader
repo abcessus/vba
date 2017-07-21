@@ -1,10 +1,12 @@
 Option Explicit
-
-Dim Con As ADODB.ConnectionDim RS As ADODB.Recordset
-Dim strFilePath, strFileName As String
-
-Dim Arr(), TempArray() As Variant
+Dim Con As ADODB.Connection
+Dim RS As ADODB.Recordset
+Dim strFilePath, strFilename, xmlFilename As String
+Dim Arr(), TempArray(), BArr(0 To 10, 0 To 5) As Variant
 Dim CT1, CT2 As Integer
+Dim xmlFile As Object
+Dim fso As Object
+Dim dat As String
 
 Sub PriceTool()
 Const adOpenStatic = 3
@@ -12,20 +14,46 @@ Const adLockOptimistic = 3
 Set Con = CreateObject("ADODB.Connection")
 Set RS = CreateObject("ADODB.Recordset")
 'nazwa pliku
-strFileName = "C:\Users\a0706517\Desktop\Book1.xlsm"
+strFilename = "C:\Users\a0706517\Desktop\Book1.xlsm"
 'typ polaczenia, sprawdzic - Microsoft.ACE.OLEDB
-    Con.ConnectionString = "Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" & strFileName & ";Extended Properties=""Excel 8.0;HDR=Yes;IMEX=1"";"
-    Con.Open Con.ConnectionString
-    'range - wprowadzic zmienna
-    RS.Open "Select * from [Sheet1$A2:E11]", Con, adOpenStatic, adLockOptimistic
+Con.ConnectionString = "Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" & strFilename & ";Extended Properties=""Excel 8.0;HDR=Yes;IMEX=1"";"
+Con.Open Con.ConnectionString
+'range - wprowadzic zmienna
+RS.Open "Select * from [Sheet1$A2:E11]", Con, adOpenStatic, adLockOptimistic
 Arr = RS.GetRows(RS.RecordCount)
-    ReDim TempArray(UBound(Arr, 2), UBound(Arr, 1))
-        For CT1 = 0 To UBound(Arr, 2)
-            For CT2 = 0 To UBound(Arr, 1)
-            TempArray(CT1, CT2) = Arr(CT2, CT1)
-        Next CT2
-    Next CT1Arr = TempArray
-'XML creator
-RS.Close
-Con.Close
+ReDim TempArray(UBound(Arr, 2), UBound(Arr, 1))    
+For CT1 = 0 To UBound(Arr, 2)        
+For CT2 = 0 To UBound(Arr, 1)            
+TempArray(CT1, CT2) = Arr(CT2, CT1)        
+Next CT2    Next CT1Arr = TempArray
+dat = Range("C7").Value
+Sheets("Fundmapping").ActivateRange("A1").Select
+For CT1 = 0 To UBound(BArr, 1)    
+BArr(CT1, 0) = ActiveCell.Value    
+BArr(CT1, 1) = ActiveCell.Offset(0, 1)    
+BArr(CT1, 2) = ActiveCell.Offset(0, 2)    
+ActiveCell.Offset(1, 0).SelectNext
+For CT1 = 0 To UBound(Arr, 1)    
+If Arr(CT1, 1) = BArr(CT1, 1) Then        
+Arr(CT1, 1) = BArr(CT1, 2)    
+End If
+Next
+Set fso = CreateObject("Scripting.FileSystemObject")
+Set xmlFile = fso.CreateTextFile("C:\Users\a0706517\Desktop\Book1.xml")
+xmlFile.WriteLine "<?xml version=" & Chr(34) & "1.0" & Chr(34) & " encoding=" & Chr(34) & "UTF-8" & Chr(34) & " standalone=" & Chr(34) & "yes" & Chr(34) & "?>"    
+xmlFile.WriteLine "<pricedata xmlns:xsi=" & Chr(34) & "http://www.w3.org/2001/XMLSchema-instance" & Chr(34) & ">"   
+xmlFile.WriteLine "<daterange startdate=" & Chr(34) & dat & Chr(34) & " enddate=" & Chr(34) & dat & Chr(34) & ">"   
+xmlFile.WriteLine "<untranched>"        
+For CT1 = 0 To UBound(Arr, 1)   
+If Arr(CT1, 0) <> 0 Then      
+xmlFile.WriteLine "<fund fundcode=" & Chr(34) & Arr(CT1, 1) & Chr(34) & " fundholg=" & Chr(34) & "A" & Chr(34) & ">"        xmlFile.WriteLine "<bidprice>" & Arr(CT1, 3) & "</bidprice>"        
+xmlFile.WriteLine "<offerprice>" & Arr(CT1, 4) & "</offerprice>"        
+xmlFile.WriteLine "</fund>" 
+End If    
+Next        
+xmlFile.WriteLine "</untranched>"    
+xmlFile.WriteLine "</daterange>"    
+xmlFile.WriteLine "</pricedata>"   
+xmlFile.Close
+RS.CloseCon.Close
 End Sub
